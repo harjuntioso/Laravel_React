@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import axiosClient from "../axios-client.js";
 import {Link} from "react-router-dom";
 import {useStateContext} from "../context/ContextProvider.jsx";
+import Swal from "sweetalert2";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -12,16 +13,34 @@ export default function Users() {
     getUsers();
   }, [])
 
-  const onDeleteClick = user => {
-    if (!window.confirm("Are you sure you want to delete this user?")) {
-      return
-    }
-    axiosClient.delete(`/users/${user.id}`)
-      .then(() => {
-        setNotification('User was successfully deleted')
-        getUsers()
-      })
-  }
+  const onDeleteClick = (user) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        axiosClient.delete(`/users/${user.id}`)
+          .then(() => {
+            // Check if this was the last item on the current page
+            if (users.length === 1 && pagination.current_page > 1) {
+              setPagination(prev => ({...prev, current_page: prev.current_page - 1}));
+            } else {
+              getUsers();
+            }
+            Swal.fire('Deleted!', 'User has been deleted.', 'success');
+          })
+          .catch(error => {
+            Swal.fire('Error!', 'Failed to delete user.', 'error');
+            console.error('Delete error:', error);
+          });
+      }
+    });
+  };
 
   const getUsers = () => {
     setLoading(true)
