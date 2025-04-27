@@ -2,6 +2,7 @@ import {useNavigate, useParams} from "react-router-dom";
 import {useEffect, useState} from "react";
 import axiosClient from "../axios-client.js";
 import {useStateContext} from "../context/ContextProvider.jsx";
+import Swal from "sweetalert2";
 
 export default function UserForm() {
   const navigate = useNavigate();
@@ -36,9 +37,27 @@ export default function UserForm() {
     if (user.id) {
       axiosClient.put(`/users/${user.id}`, user)
         .then(() => {
-          setNotification('User was successfully updated')
-          navigate('/users')
-        })
+            Swal.fire({
+                  title: 'Are you sure ?',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#d33',
+                  cancelButtonColor: '#3085d6',
+                  confirmButtonText: 'Yes, save it!'
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    axiosClient.put(`/users/${user.id}`, user)
+                      .then(() => {
+                        Swal.fire(
+                          'Updated!',
+                          'User has been updated.',
+                          'success'
+                        )
+                        navigate('/users');
+                      })
+                  }
+                })
+              })
         .catch(err => {
           const response = err.response;
           if (response && response.status === 422) {
